@@ -57,7 +57,7 @@ extern "C"{
  *         - 1 init failed
  * @note   none
  */
-uint8_t aht30_basic_init(void);
+uint8_t aht30_basic_init(char *name, int aht30_addr);
 
 /**
  * @brief  basic example deinit

@@ -35,6 +35,7 @@
  */
 
 #include "driver_aht30_basic.h"
+#include "iic.h"
 
 static aht30_handle_t gs_handle;        /**< aht30 handle */
 
@@ -45,13 +46,21 @@ static aht30_handle_t gs_handle;        /**< aht30 handle */
  *         - 1 init failed
  * @note   none
  */
-uint8_t aht30_basic_init(void)
+uint8_t aht30_basic_init(char *name, int aht30_addr)
 {
     uint8_t res;
+    int i2c_int;
     
     /* link interface function */
     DRIVER_AHT30_LINK_INIT(&gs_handle, aht30_handle_t);
-    DRIVER_AHT30_LINK_IIC_INIT(&gs_handle, aht30_interface_iic_init);
+    //DRIVER_AHT30_LINK_IIC_INIT(&gs_handle, aht30_interface_iic_init);
+
+    if(iic_init(name, &i2c_int, aht30_addr) != 0)
+    {
+        aht30_interface_debug_print("aht30: i2c init failed.\n");
+        return 1;
+    }
+
     DRIVER_AHT30_LINK_IIC_DEINIT(&gs_handle, aht30_interface_iic_deinit);
     DRIVER_AHT30_LINK_IIC_READ_CMD(&gs_handle, aht30_interface_iic_read_cmd);
     DRIVER_AHT30_LINK_IIC_WRITE_CMD(&gs_handle, aht30_interface_iic_write_cmd);

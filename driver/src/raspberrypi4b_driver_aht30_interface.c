@@ -42,6 +42,7 @@
  * @brief iic device name definition
  */
 #define IIC_DEVICE_NAME "/dev/i2c-1"        /**< iic device name */
+#define IIC_DEVICE_ADDR 0x38
 
 /**
  * @brief iic device handle definition
@@ -57,7 +58,7 @@ static int gs_fd;                           /**< iic handle */
  */
 uint8_t aht30_interface_iic_init(void)
 {
-    return iic_init(IIC_DEVICE_NAME, &gs_fd);
+    return iic_init(IIC_DEVICE_NAME, &gs_fd, IIC_DEVICE_ADDR);
 }
 
 /**

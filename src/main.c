@@ -35,7 +35,6 @@
  */
 
 #include "driver_aht30_basic.h"
-#include "driver_aht30_read_test.h"
 #include <math.h>
 #include <getopt.h>
 #include <stdlib.h>
@@ -58,10 +57,7 @@ uint8_t aht30(int argc, char **argv)
     const struct option long_options[] =
     {
         {"help", no_argument, NULL, 'h'},
-        {"information", no_argument, NULL, 'i'},
-        {"port", no_argument, NULL, 'p'},
         {"example", required_argument, NULL, 'e'},
-        {"test", required_argument, NULL, 't'},
         {"times", required_argument, NULL, 1},
         {NULL, 0, NULL, 0},
     };
@@ -97,42 +93,12 @@ uint8_t aht30(int argc, char **argv)
                 break;
             }
             
-            /* information */
-            case 'i' :
-            {
-                /* set the type */
-                memset(type, 0, sizeof(char) * 33);
-                snprintf(type, 32, "i");
-                
-                break;
-            }
-            
-            /* port */
-            case 'p' :
-            {
-                /* set the type */
-                memset(type, 0, sizeof(char) * 33);
-                snprintf(type, 32, "p");
-                
-                break;
-            }
-            
             /* example */
             case 'e' :
             {
                 /* set the type */
                 memset(type, 0, sizeof(char) * 33);
                 snprintf(type, 32, "e_%s", optarg);
-                
-                break;
-            }
-            
-            /* test */
-            case 't' :
-            {
-                /* set the type */
-                memset(type, 0, sizeof(char) * 33);
-                snprintf(type, 32, "t_%s", optarg);
                 
                 break;
             }
@@ -161,19 +127,7 @@ uint8_t aht30(int argc, char **argv)
     } while (c != -1);
 
     /* run the function */
-    if (strcmp("t_read", type) == 0)
-    {
-        /* run read test */
-        if (aht30_read_test(times) != 0)
-        {
-            return 1;
-        }
-        else
-        {
-            return 0;
-        }
-    }
-    else if (strcmp("e_read", type) == 0)
+    if (strcmp("e_read", type) == 0)
     {
         uint8_t res;
         uint32_t i;
@@ -190,9 +144,6 @@ uint8_t aht30(int argc, char **argv)
         /* loop */
         for (i = 0; i < times; i++)
         {
-            /* delay 2000ms */
-            aht30_interface_delay_ms(2000);
-            
             /* read data */
             res = aht30_basic_read((float *)&temperature, (uint8_t *)&humidity);
             if (res != 0)
@@ -205,7 +156,10 @@ uint8_t aht30(int argc, char **argv)
             /* output */
             aht30_interface_debug_print("aht30: %d/%d.\n", (uint32_t)(i + 1), (uint32_t)times);
             aht30_interface_debug_print("aht30: temperature is %0.2fC.\n", temperature);
-            aht30_interface_debug_print("aht30: humidity is %d%%.\n", humidity); 
+            aht30_interface_debug_print("aht30: humidity is %d%%.\n", humidity);
+
+            /* delay 2000ms */
+            aht30_interface_delay_ms(1000);
         }
         
         /* deinit */
@@ -217,46 +171,14 @@ uint8_t aht30(int argc, char **argv)
     {
         help:
         aht30_interface_debug_print("Usage:\n");
-        aht30_interface_debug_print("  aht30 (-i | --information)\n");
         aht30_interface_debug_print("  aht30 (-h | --help)\n");
-        aht30_interface_debug_print("  aht30 (-p | --port)\n");
         aht30_interface_debug_print("  aht30 (-t read | --test=read) [--times=<num>]\n");
         aht30_interface_debug_print("  aht30 (-e read | --example=read) [--times=<num>]\n");
         aht30_interface_debug_print("\n");
         aht30_interface_debug_print("Options:\n");
         aht30_interface_debug_print("  -e <read>, --example=<read>    Run the driver example.\n");
         aht30_interface_debug_print("  -h, --help                     Show the help.\n");
-        aht30_interface_debug_print("  -i, --information              Show the chip information.\n");
-        aht30_interface_debug_print("  -p, --port                     Display the pin connections of the current board.\n");
-        aht30_interface_debug_print("  -t <read>, --test=<read>       Run the driver test.\n");
-        aht30_interface_debug_print("      --times=<num>              Set the running times.([default: 3])\n");
-        
-        return 0;
-    }
-    else if (strcmp("i", type) == 0)
-    {
-        aht30_info_t info;
-        
-        /* print aht30 information */
-        aht30_info(&info);
-        aht30_interface_debug_print("aht30: chip is %s.\n", info.chip_name);
-        aht30_interface_debug_print("aht30: manufacturer is %s.\n", info.manufacturer_name);
-        aht30_interface_debug_print("aht30: interface is %s.\n", info.interface);
-        aht30_interface_debug_print("aht30: driver version is %d.%d.\n", info.driver_version / 1000, (info.driver_version % 1000) / 100);
-        aht30_interface_debug_print("aht30: min supply voltage is %0.1fV.\n", info.supply_voltage_min_v);
-        aht30_interface_debug_print("aht30: max supply voltage is %0.1fV.\n", info.supply_voltage_max_v);
-        aht30_interface_debug_print("aht30: max current is %0.2fmA.\n", info.max_current_ma);
-        aht30_interface_debug_print("aht30: max temperature is %0.1fC.\n", info.temperature_max);
-        aht30_interface_debug_print("aht30: min temperature is %0.1fC.\n", info.temperature_min);
-        
-        return 0;
-    }
-    else if (strcmp("p", type) == 0)
-    {
-        /* print pin connection */
-        aht30_interface_debug_print("aht30: SCL connected to GPIO3(BCM).\n");
-        aht30_interface_debug_print("aht30: SDA connected to GPIO2(BCM).\n");
-        
+
         return 0;
     }
     else

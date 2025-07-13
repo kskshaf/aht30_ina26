@@ -57,20 +57,6 @@ extern "C"{
  */
 
 /**
- * @brief aht30 status enumeration definition
- */
-typedef enum
-{
-    AHT30_STATUS_BUSY               = (1 << 7),        /**< busy bit */
-    AHT30_STATUS_NOR_MODE           = (0 << 5),        /**< nor mode */
-    AHT30_STATUS_CYC_MODE           = (1 << 5),        /**< cyc mode */
-    AHT30_STATUS_CMD_MODE           = (2 << 5),        /**< cmd mode */
-    AHT30_STATUS_CRC_FLAG           = (1 << 4),        /**< crc flag */
-    AHT30_STATUS_CALIBRATION_ENABLE = (1 << 3),        /**< calibration enable */
-    AHT30_STATUS_CMP_INT            = (1 << 2),        /**< comparation interrupt */
-} aht30_status_t;
-
-/**
  * @brief aht30 handle structure definition
  */
 typedef struct aht30_handle_s
@@ -83,22 +69,6 @@ typedef struct aht30_handle_s
     void (*debug_print)(const char *const fmt, ...);                           /**< point to a debug_print function address */
     uint8_t inited;                                                            /**< inited flag */
 } aht30_handle_t;
-
-/**
- * @brief aht30 information structure definition
- */
-typedef struct aht30_info_s
-{
-    char chip_name[32];                /**< chip name */
-    char manufacturer_name[32];        /**< manufacturer name */
-    char interface[8];                 /**< chip interface name */
-    float supply_voltage_min_v;        /**< chip min supply voltage */
-    float supply_voltage_max_v;        /**< chip max supply voltage */
-    float max_current_ma;              /**< chip max current */
-    float temperature_min;             /**< chip min operating temperature */
-    float temperature_max;             /**< chip max operating temperature */
-    uint32_t driver_version;           /**< driver version */
-} aht30_info_t;
 
 /**
  * @}
@@ -179,16 +149,6 @@ typedef struct aht30_info_s
  */
 
 /**
- * @brief      get chip's information
- * @param[out] *info pointer to an aht30 info structure
- * @return     status code
- *             - 0 success
- *             - 2 handle is NULL
- * @note       none
- */
-uint8_t aht30_info(aht30_info_t *info);
-
-/**
  * @brief     initialize the chip
  * @param[in] *handle pointer to an aht30 handle structure
  * @return    status code
@@ -232,98 +192,6 @@ uint8_t aht30_deinit(aht30_handle_t *handle);
  */
 uint8_t aht30_read_temperature_humidity(aht30_handle_t *handle, uint32_t *temperature_raw, float *temperature_s,
                                         uint32_t *humidity_raw, uint8_t *humidity_s);
-
-/**
- * @brief      read the temperature
- * @param[in]  *handle pointer to an aht30 handle structure
- * @param[out] *temperature_raw pointer to a raw temperature buffer
- * @param[out] *temperature_s pointer to a converted temperature buffer
- * @return     status code
- *             - 0 success
- *             - 1 read temperature failed
- *             - 2 handle is NULL
- *             - 3 handle is not initialized
- *             - 4 data is not ready
- *             - 5 crc is error
- * @note       none
- */
-uint8_t aht30_read_temperature(aht30_handle_t *handle, uint32_t *temperature_raw, float *temperature_s);
-
-/**
- * @brief      read the humidity data
- * @param[in]  *handle pointer to an aht30 handle structure
- * @param[out] *humidity_raw pointer to a raw humidity buffer
- * @param[out] *humidity_s pointer to a converted humidity buffer
- * @return     status code
- *             - 0 success
- *             - 1 read humidity failed
- *             - 2 handle is NULL
- *             - 3 handle is not initialized
- *             - 4 data is not ready
- *             - 5 crc is error
- * @note       none
- */
-uint8_t aht30_read_humidity(aht30_handle_t *handle, uint32_t *humidity_raw, uint8_t *humidity_s);
-
-/**
- * @brief      get status
- * @param[in]  *handle pointer to an aht30 handle structure
- * @param[out] *status pointer to a status buffer
- * @return     status code
- *             - 0 success
- *             - 1 get status failed
- *             - 2 handle is NULL
- *             - 3 handle is not initialized
- * @note       none
- */
-uint8_t aht30_get_status(aht30_handle_t *handle, uint8_t *status);
-
-/**
- * @}
- */
-
-/**
- * @defgroup aht30_extend_driver aht30 extend driver function
- * @brief    aht30 extend driver modules
- * @ingroup  aht30_driver
- * @{
- */
-
-/**
- * @brief     set the chip register
- * @param[in] *handle pointer to an aht30 handle structure
- * @param[in] *buf pointer to a data buffer
- * @param[in] len length of data buffer
- * @return    status code
- *            - 0 success
- *            - 1 write failed
- *            - 2 handle is NULL
- *            - 3 handle is not initialized
- * @note      none
- */
-uint8_t aht30_set_reg(aht30_handle_t *handle, uint8_t *buf, uint16_t len);
-
-/**
- * @brief      get the chip register
- * @param[in]  *handle pointer to an aht30 handle structure
- * @param[out] *buf pointer to a data buffer
- * @param[in]  len length of data buffer
- * @return     status code
- *             - 0 success
- *             - 1 read failed
- *             - 2 handle is NULL
- *             - 3 handle is not initialized
- * @note       none
- */
-uint8_t aht30_get_reg(aht30_handle_t *handle, uint8_t *buf, uint16_t len);
-
-/**
- * @}
- */
-
-/**
- * @}
- */
 
 #ifdef __cplusplus
 }

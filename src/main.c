@@ -40,9 +40,6 @@
 #include <getopt.h>
 #include <stdlib.h>
 
-#define IIC_DEVICE_1 "/dev/i2c-2"
-#define IIC_DEVICE_2 "/dev/i2c-3"
-
 /**
  * @brief     aht30 full function
  * @param[in] argc arg numbers
@@ -184,7 +181,7 @@ uint8_t aht30(int argc, char **argv)
         uint8_t humidity;
         
         /* basic init */
-        res = aht30_basic_init(IIC_DEVICE_1, 0x38);
+        res = aht30_basic_init();
         if (res != 0)
         {
             return 1;

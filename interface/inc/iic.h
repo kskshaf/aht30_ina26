@@ -62,7 +62,7 @@ extern "C" {
  *             - 1 init failed
  * @note       none
  */
-uint8_t iic_init(char *name, int *fd, int aht30_addr);
+uint8_t iic_init(char *name, int *fd);
 
 /**
  * @brief     iic bus deinit

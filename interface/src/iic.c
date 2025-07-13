@@ -49,25 +49,13 @@
  *             - 1 init failed
  * @note       none
  */
-uint8_t iic_init(char *name, int *fd, int aht30_addr)
+uint8_t iic_init(char *name, int *fd)
 {
     /* open the device */
     *fd = open(name, O_RDWR);
     
     /* check the fd */
     if ((*fd) < 0)
-    {
-        perror("iic: open failed.\n");
-     
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-
-    /* check device's address */
-    if (ioctl(*fd, I2C_SLAVE, aht30_addr) < 0)
     {
         perror("iic: open failed.\n");
      

@@ -154,12 +154,12 @@ uint8_t aht30(int argc, char **argv)
             }
             
             /* output */
-            aht30_interface_debug_print("aht30: %d/%d.\n", (uint32_t)(i + 1), (uint32_t)times);
-            aht30_interface_debug_print("aht30: temperature is %0.2fC.\n", temperature);
-            aht30_interface_debug_print("aht30: humidity is %d%%.\n", humidity);
+            printf("aht30: %d/%d.\n", (uint32_t)(i + 1), (uint32_t)times);
+            printf("aht30: temperature is %0.2fC.\n", temperature);
+            printf("aht30: humidity is %d%%.\n", humidity);
 
             /* delay 2000ms */
-            aht30_interface_delay_ms(1000);
+            usleep(1000*1000);
         }
         
         /* deinit */
@@ -170,14 +170,14 @@ uint8_t aht30(int argc, char **argv)
     else if (strcmp("h", type) == 0)
     {
         help:
-        aht30_interface_debug_print("Usage:\n");
-        aht30_interface_debug_print("  aht30 (-h | --help)\n");
-        aht30_interface_debug_print("  aht30 (-t read | --test=read) [--times=<num>]\n");
-        aht30_interface_debug_print("  aht30 (-e read | --example=read) [--times=<num>]\n");
-        aht30_interface_debug_print("\n");
-        aht30_interface_debug_print("Options:\n");
-        aht30_interface_debug_print("  -e <read>, --example=<read>    Run the driver example.\n");
-        aht30_interface_debug_print("  -h, --help                     Show the help.\n");
+        printf("Usage:\n");
+        printf("  aht30 (-h | --help)\n");
+        printf("  aht30 (-t read | --test=read) [--times=<num>]\n");
+        printf("  aht30 (-e read | --example=read) [--times=<num>]\n");
+        printf("\n");
+        printf("Options:\n");
+        printf("  -e <read>, --example=<read>    Run the driver example.\n");
+        printf("  -h, --help                     Show the help.\n");
 
         return 0;
     }
@@ -206,15 +206,15 @@ int main(int argc, char **argv)
     }
     else if (res == 1)
     {
-        aht30_interface_debug_print("aht30: run failed.\n");
+        printf("aht30: run failed.\n");
     }
     else if (res == 5)
     {
-        aht30_interface_debug_print("aht30: param is invalid.\n");
+        printf("aht30: param is invalid.\n");
     }
     else
     {
-        aht30_interface_debug_print("aht30: unknown status code.\n");
+        printf("aht30: unknown status code.\n");
     }
 
     return 0;

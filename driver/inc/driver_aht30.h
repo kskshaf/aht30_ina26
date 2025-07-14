@@ -40,6 +40,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
+#include <unistd.h>
 
 #ifdef __cplusplus
 extern "C"{
@@ -65,8 +67,6 @@ typedef struct aht30_handle_s
     uint8_t (*iic_deinit)(void);                                               /**< point to an iic_deinit function address */
     uint8_t (*iic_read_cmd)(uint8_t addr, uint8_t *buf, uint16_t len);         /**< point to an iic_read_cmd function address */
     uint8_t (*iic_write_cmd)(uint8_t addr, uint8_t *buf, uint16_t len);        /**< point to an iic_write_cmd function address */
-    void (*delay_ms)(uint32_t ms);                                             /**< point to a delay_ms function address */
-    void (*debug_print)(const char *const fmt, ...);                           /**< point to a debug_print function address */
     uint8_t inited;                                                            /**< inited flag */
 } aht30_handle_t;
 
@@ -80,62 +80,6 @@ typedef struct aht30_handle_s
  * @ingroup  aht30_driver
  * @{
  */
-
-/**
- * @brief     initialize aht30_handle_t structure
- * @param[in] HANDLE pointer to an aht30 handle structure
- * @param[in] STRUCTURE aht30_handle_t
- * @note      none
- */
-#define DRIVER_AHT30_LINK_INIT(HANDLE, STRUCTURE)      memset(HANDLE, 0, sizeof(STRUCTURE))
-
-/**
- * @brief     link iic_init function
- * @param[in] HANDLE pointer to an aht30 handle structure
- * @param[in] FUC pointer to an iic_init function address
- * @note      none
- */
-#define DRIVER_AHT30_LINK_IIC_INIT(HANDLE, FUC)        (HANDLE)->iic_init = FUC
-
-/**
- * @brief     link iic_deinit function
- * @param[in] HANDLE pointer to an aht30 handle structure
- * @param[in] FUC pointer to an iic_deinit function address
- * @note      none
- */
-#define DRIVER_AHT30_LINK_IIC_DEINIT(HANDLE, FUC)      (HANDLE)->iic_deinit = FUC
-
-/**
- * @brief     link iic_read_cmd function
- * @param[in] HANDLE pointer to an aht30 handle structure
- * @param[in] FUC pointer to an iic_read_cmd function address
- * @note      none
- */
-#define DRIVER_AHT30_LINK_IIC_READ_CMD(HANDLE, FUC)    (HANDLE)->iic_read_cmd = FUC
-
-/**
- * @brief     link iic_write_cmd function
- * @param[in] HANDLE pointer to an aht30 handle structure
- * @param[in] FUC pointer to an iic_write_cmd function address
- * @note      none
- */
-#define DRIVER_AHT30_LINK_IIC_WRITE_CMD(HANDLE, FUC)   (HANDLE)->iic_write_cmd = FUC
-
-/**
- * @brief     link delay_ms function
- * @param[in] HANDLE pointer to an aht30 handle structure
- * @param[in] FUC pointer to a delay_ms function address
- * @note      none
- */
-#define DRIVER_AHT30_LINK_DELAY_MS(HANDLE, FUC)        (HANDLE)->delay_ms = FUC
-
-/**
- * @brief     link debug_print function
- * @param[in] HANDLE pointer to an aht30 handle structure
- * @param[in] FUC pointer to a debug_print function address
- * @note      none
- */
-#define DRIVER_AHT30_LINK_DEBUG_PRINT(HANDLE, FUC)     (HANDLE)->debug_print = FUC
 
 /**
  * @}
@@ -160,7 +104,7 @@ typedef struct aht30_handle_s
  *            - 5 reset reg failed
  * @note      none
  */
-uint8_t aht30_init(aht30_handle_t *handle);
+uint8_t aht30_init(int g_handle);
 
 /**
  * @brief     close the chip
@@ -172,7 +116,7 @@ uint8_t aht30_init(aht30_handle_t *handle);
  *            - 3 handle is not initialized
  * @note      none
  */
-uint8_t aht30_deinit(aht30_handle_t *handle);
+uint8_t aht30_deinit(int g_handle);
 
 /**
  * @brief      read the temperature and humidity data
@@ -190,7 +134,7 @@ uint8_t aht30_deinit(aht30_handle_t *handle);
  *             - 5 crc is error
  * @note       none
  */
-uint8_t aht30_read_temperature_humidity(aht30_handle_t *handle, uint32_t *temperature_raw, float *temperature_s,
+uint8_t aht30_read_temperature_humidity(int g_handle, uint32_t *temperature_raw, float *temperature_s,
                                         uint32_t *humidity_raw, uint8_t *humidity_s);
 
 #ifdef __cplusplus

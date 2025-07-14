@@ -37,7 +37,7 @@
 #ifndef DRIVER_AHT30_BASIC_H
 #define DRIVER_AHT30_BASIC_H
 
-#include "driver_aht30_interface.h"
+#include "driver_aht30.h"
 
 #ifdef __cplusplus
 extern "C"{

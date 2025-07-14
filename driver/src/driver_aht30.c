@@ -35,55 +35,21 @@
  */
 
 #include "driver_aht30.h"
+#include "iic.h"
+
+void delay_ms(uint32_t ms)
+{
+    usleep(ms * 1000);
+}
+
+#define IIC_DEVICE_NAME "/dev/i2c-1"        /**< iic device name */
+#define IIC_DEVICE_ADDR 0x38
+uint8_t inited;
 
 /**
  * @brief chip address definition
  */
 #define AHT30_ADDRESS             0x70        /**< iic device address */
-
-/**
- * @brief      read bytes
- * @param[in]  *handle pointer to an aht30 handle structure
- * @param[out] *data pointer to a data buffer
- * @param[in]  len length of data
- * @return     status code
- *             - 0 success
- *             - 1 read failed
- * @note       none
- */
-static uint8_t a_aht30_iic_read(aht30_handle_t *handle, uint8_t *data, uint16_t len)
-{
-    if (handle->iic_read_cmd(AHT30_ADDRESS, data, len) != 0)        /* read the register */
-    {
-        return 1;                                                   /* return error */
-    }
-    else
-    {
-        return 0;                                                   /* success return 0 */
-    }
-}
-
-/**
- * @brief     write bytes
- * @param[in] *handle pointer to an aht30 handle structure
- * @param[in] *data pointer to a data buffer
- * @param[in] len length of data
- * @return    status code
- *            - 0 success
- *            - 1 write failed
- * @note      none
- */
-static uint8_t a_aht30_iic_write(aht30_handle_t *handle, uint8_t *data, uint16_t len)
-{
-    if (handle->iic_write_cmd(AHT30_ADDRESS, data, len) != 0)        /* write the register */
-    {
-        return 1;                                                    /* return error */
-    }
-    else
-    {
-        return 0;                                                    /* success return 0 */
-    }
-}
 
 /**
  * @brief     calculate the crc
@@ -126,33 +92,36 @@ static uint8_t a_aht30_calc_crc(uint8_t *data, uint8_t len)
  *            - 1 reset failed
  * @note      none
  */
-static uint8_t a_aht30_jh_reset_reg(aht30_handle_t *handle, uint8_t addr)
+static uint8_t a_aht30_jh_reset_reg(int g_handle, uint8_t addr)
 {
     uint8_t buf[3];
     uint8_t regs[3];
-    
+
     buf[0] = addr;                                     /* set the addr */
     buf[1] = 0x00;                                     /* set 0x00 */
     buf[2] = 0x00;                                     /* set 0x00 */
-    if (a_aht30_iic_write(handle, buf, 3) != 0)        /* write the command */
+
+    if (iic_write_cmd(g_handle, AHT30_ADDRESS, buf, 3) != 0)  /* write the command */
     {
-        return 1;                                      /* return error */
+        return 1;
     }
-    handle->delay_ms(5);                               /* delay 5ms */
-    if (a_aht30_iic_read(handle, regs, 3) != 0)        /* read regs */
+    delay_ms(5);
+
+    if (iic_read_cmd(g_handle, AHT30_ADDRESS, regs, 3) != 0)  /* read regs */
     {
-        return 1;                                      /* return error */
+        return 1;
     }
-    handle->delay_ms(10);                              /* delay 10ms */
+    delay_ms(10);
+
     buf[0] = 0xB0 | addr;                              /* set addr */
     buf[1] = regs[1];                                  /* set regs[1] */
     buf[2] = regs[2];                                  /* set regs[2] */
-    if (a_aht30_iic_write(handle, buf, 3) != 0)        /* write the data */
+    if (iic_write_cmd(g_handle, AHT30_ADDRESS, buf, 3) != 0)
     {
-        return 1;                                      /* return error */
+        return 1;
     }
     
-    return 0;                                          /* success return 0 */
+    return 0;
 }
 
 /**
@@ -167,89 +136,47 @@ static uint8_t a_aht30_jh_reset_reg(aht30_handle_t *handle, uint8_t addr)
  *            - 5 reset reg failed
  * @note      none
  */
-uint8_t aht30_init(aht30_handle_t *handle)
+uint8_t aht30_init(int g_handle)
 {
     uint8_t status;
-    
-    if (handle == NULL)                                                /* check handle */
+
+    if (iic_init(IIC_DEVICE_NAME, &g_handle, IIC_DEVICE_ADDR) != 0)       /* iic init */
     {
-        return 2;                                                      /* return error */
+        printf("aht30: iic init failed.\n");
+        return 1;
     }
-    if (handle->debug_print == NULL)                                   /* check debug_print */
+    delay_ms(200);
+
+    if (iic_read_cmd(g_handle, AHT30_ADDRESS, &status, 1) != 0)           /* read the status */
     {
-        return 3;                                                      /* return error */
+        printf("aht30: read status failed.\n");
+        iic_deinit(g_handle);
+        return 4;
     }
-    if (handle->iic_init == NULL)                                      /* check iic_init */
+
+    if ((status & 0x18) != 0x18)                                         /* check the status */
     {
-        handle->debug_print("aht30: iic_init is null.\n");             /* iic_init is null */
-        
-        return 3;                                                      /* return error */
-    }
-    if (handle->iic_deinit == NULL)                                    /* check iic_deinit */
-    {
-        handle->debug_print("aht30: iic_deinit is null.\n");           /* iic_deinit is null */
-        
-        return 3;                                                      /* return error */
-    }
-    if (handle->iic_read_cmd == NULL)                                  /* check iic_read_cmd */
-    {
-        handle->debug_print("aht30: iic_read_cmd is null.\n");         /* iic_read_cmd is null */
-        
-        return 3;                                                      /* return error */
-    }
-    if (handle->iic_write_cmd == NULL)                                 /* check iic_write_cmd */
-    {
-        handle->debug_print("aht30: iic_write_cmd is null.\n");        /* iic_write_cmd is null */
-        
-        return 3;                                                      /* return error */
-    }
-    if (handle->delay_ms == NULL)                                      /* check delay_ms */
-    {
-        handle->debug_print("aht30: delay_ms is null.\n");             /* delay_ms is null */
-        
-        return 3;                                                      /* return error */
-    }
-    
-    if (handle->iic_init() != 0)                                       /* iic init */
-    {
-        handle->debug_print("aht30: iic init failed.\n");              /* iic init failed */
-        
-        return 1;                                                      /* return error */
-    }
-    handle->delay_ms(500);                                             /* wait for 500 ms */
-    if (a_aht30_iic_read(handle, &status, 1) != 0)                     /* read the status */
-    {
-        handle->debug_print("aht30: read status failed.\n");           /* read status failed */
-        (void)handle->iic_deinit();                                    /* close the iic */
-        
-        return 4;                                                      /* return error */
-    }
-    if ((status & 0x18) != 0x18)                                       /* check the status */
-    {
-        if (a_aht30_jh_reset_reg(handle, 0x1B) != 0)                   /* reset the 0x1B */
+        if (a_aht30_jh_reset_reg(g_handle, 0x1B) != 0)                   /* reset the 0x1B */
         {
-            handle->debug_print("aht30: reset reg failed.\n");         /* reset reg failed */
-            (void)handle->iic_deinit();                                /* close the iic */
-            
-            return 5;                                                  /* return error */
+            printf("aht30: reset reg failed.\n");
+            iic_deinit(g_handle);
+            return 5;
         }
-        if (a_aht30_jh_reset_reg(handle, 0x1C) != 0)                   /* reset the 0x1C */
+        if (a_aht30_jh_reset_reg(g_handle, 0x1C) != 0)                   /* reset the 0x1C */
         {
-            handle->debug_print("aht30: reset reg failed.\n");         /* reset reg failed */
-            (void)handle->iic_deinit();                                /* close the iic */
-            
-            return 5;                                                  /* return error */
+            printf("aht30: reset reg failed.\n");
+            iic_deinit(g_handle);
+            return 5;
         }
-        if (a_aht30_jh_reset_reg(handle, 0x1E) != 0)                   /* reset the 0x1E */
+        if (a_aht30_jh_reset_reg(g_handle, 0x1E) != 0)                   /* reset the 0x1E */
         {
-            handle->debug_print("aht30: reset reg failed.\n");         /* reset reg failed */
-            (void)handle->iic_deinit();                                /* close the iic */
-            
-            return 5;                                                  /* return error */
+            printf("aht30: reset reg failed.\n");
+            iic_deinit(g_handle);
+            return 5;
         }
     }
-    handle->delay_ms(10);                                              /* delay 10ms */
-    handle->inited = 1;                                                /* flag finish initialization */
+    delay_ms(10);
+    inited = 1;                                                        /* flag finish initialization */
     
     return 0;                                                          /* success return 0 */
 }
@@ -264,24 +191,19 @@ uint8_t aht30_init(aht30_handle_t *handle)
  *            - 3 handle is not initialized
  * @note      none
  */
-uint8_t aht30_deinit(aht30_handle_t *handle)
+uint8_t aht30_deinit(int g_handle)
 {
-    if (handle == NULL)                                            /* check handle */
-    {
-        return 2;                                                  /* return error */
-    }
-    if (handle->inited != 1)                                       /* check handle initialization */
+    if (inited != 1)                                       /* check handle initialization */
     {
         return 3;                                                  /* return error */
     }
-    
-    if (handle->iic_deinit() != 0)                                 /* iic deinit */
+
+    if (iic_deinit(g_handle) != 0)                                 /* iic deinit */
     {
-        handle->debug_print("aht30: iic deinit failed.\n");        /* iic deinit failed */
-        
+        printf("aht30: iic deinit failed.\n");        /* iic deinit failed */
         return 1;                                                  /* return error */
     }
-    handle->inited = 0;                                            /* set closed flag */
+    inited = 0;                                            /* set closed flag */
     
     return 0;                                                      /* success return 0 */
 }
@@ -302,47 +224,40 @@ uint8_t aht30_deinit(aht30_handle_t *handle)
  *             - 5 crc is error
  * @note       none
  */
-uint8_t aht30_read_temperature_humidity(aht30_handle_t *handle, uint32_t *temperature_raw, float *temperature_s,
+uint8_t aht30_read_temperature_humidity(int g_handle, uint32_t *temperature_raw, float *temperature_s,
                                         uint32_t *humidity_raw, uint8_t *humidity_s)
 {
     uint8_t buf[7];
-    
-    if (handle == NULL)                                               /* check handle */
+
+    if (inited != 1)                                                  /* check handle initialization */
     {
-        return 2;                                                     /* return error */
+        return 3;
     }
-    if (handle->inited != 1)                                          /* check handle initialization */
-    {
-        return 3;                                                     /* return error */
-    }
-    
+
     buf[0] = 0xAC;                                                    /* set the addr */
     buf[1] = 0x33;                                                    /* set 0x33 */
     buf[2] = 0x00;                                                    /* set 0x00 */
-    if (a_aht30_iic_write(handle, buf, 3) != 0)                       /* write the command */
+    if (iic_write_cmd(g_handle, AHT30_ADDRESS, buf, 3) != 0)          /* write the command */
     {
-        handle->debug_print("aht30: sent command failed.\n");         /* sent command failed */
-        
-        return 1;                                                     /* return error */
+        printf("aht30: sent command failed.\n");                      /* sent command failed */
+        return 1;
     }
-    handle->delay_ms(85);                                             /* delay 85ms */
-    if (a_aht30_iic_read(handle, buf, 7) != 0)                        /* read data */
+    delay_ms(85);                                                     /* delay 85ms */
+
+    if (iic_read_cmd(g_handle, AHT30_ADDRESS, buf, 7) != 0)           /* read data */
     {
-        handle->debug_print("aht30: read data failed.\n");            /* read data failed */
-        
-        return 1;                                                     /* return error */
+        printf("aht30: read data failed.\n");
+        return 1;
     }
     if ((buf[0] & 0x80) != 0)                                         /* check busy */
     {
-        handle->debug_print("aht30: data is not ready.\n");           /* data is not ready */
-        
-        return 4;                                                     /* return error */
+        printf("aht30: data is not ready.\n");
+        return 4;
     }
     if (a_aht30_calc_crc(buf, 6) != buf[6])                           /* check the crc */
     {
-        handle->debug_print("aht30: crc is error.\n");                /* crc is error */
-        
-        return 5;                                                     /* return error */
+        printf("aht30: crc is error.\n");
+        return 5;
     }
     
     *humidity_raw = (((uint32_t)buf[1]) << 16) |

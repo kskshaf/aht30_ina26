@@ -93,20 +93,6 @@ uint8_t aht30_interface_iic_read_cmd(uint8_t addr, uint8_t *buf, uint16_t len);
 uint8_t aht30_interface_iic_write_cmd(uint8_t addr, uint8_t *buf, uint16_t len);
 
 /**
- * @brief     interface delay ms
- * @param[in] ms time
- * @note      none
- */
-void aht30_interface_delay_ms(uint32_t ms);
-
-/**
- * @brief     interface print format data
- * @param[in] fmt format data
- * @note      none
- */
-void aht30_interface_debug_print(const char *const fmt, ...);
-
-/**
  * @}
  */
 

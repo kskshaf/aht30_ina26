@@ -102,33 +102,3 @@ uint8_t aht30_interface_iic_write_cmd(uint8_t addr, uint8_t *buf, uint16_t len)
 {
     return iic_write_cmd(gs_fd, addr, buf, len);
 }
-
-/**
- * @brief     interface delay ms
- * @param[in] ms time
- * @note      none
- */
-void aht30_interface_delay_ms(uint32_t ms)
-{
-    usleep(ms * 1000);
-}
-
-/**
- * @brief     interface print format data
- * @param[in] fmt format data
- * @note      none
- */
-void aht30_interface_debug_print(const char *const fmt, ...)
-{
-    char str[256];
-    uint16_t len;
-    va_list args;
-    
-    memset((char *)str, 0, sizeof(char) * 256); 
-    va_start(args, fmt);
-    vsnprintf((char *)str, 255, (char const *)fmt, args);
-    va_end(args);
-    
-    len = strlen((char *)str);
-    (void)printf((char *)str, len);
-}

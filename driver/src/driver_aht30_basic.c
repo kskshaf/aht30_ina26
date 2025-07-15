@@ -37,7 +37,7 @@
 #include "driver_aht30_basic.h"
 
 //static aht30_handle_t gs_handle;        /**< aht30 handle */
-volatile static int gs_fd;                       /**< iic handle */
+static int gs_fd;                       /**< iic handle */
 
 /**
  * @brief  basic example init
@@ -51,7 +51,7 @@ uint8_t aht30_basic_init(void)
     uint8_t res;
 
     /* aht30 init */
-    res = aht30_init(gs_fd);
+    res = aht30_init(&gs_fd);
     if (res != 0)
     {
         printf("aht30: init failed.\n");

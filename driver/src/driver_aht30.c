@@ -42,7 +42,7 @@ void delay_ms(uint32_t ms)
     usleep(ms * 1000);
 }
 
-#define IIC_DEVICE_NAME "/dev/i2c-1"        /**< iic device name */
+#define IIC_DEVICE_NAME "/dev/i2c-4"        /**< iic device name */
 #define IIC_DEVICE_ADDR 0x38
 uint8_t inited;
 
@@ -136,42 +136,42 @@ static uint8_t a_aht30_jh_reset_reg(int g_handle, uint8_t addr)
  *            - 5 reset reg failed
  * @note      none
  */
-uint8_t aht30_init(int g_handle)
+uint8_t aht30_init(int *g_handle)
 {
     uint8_t status;
 
-    if (iic_init(IIC_DEVICE_NAME, &g_handle, IIC_DEVICE_ADDR) != 0)       /* iic init */
+    if (iic_init(IIC_DEVICE_NAME, g_handle, IIC_DEVICE_ADDR) != 0)       /* iic init */
     {
         printf("aht30: iic init failed.\n");
         return 1;
     }
     delay_ms(200);
 
-    if (iic_read_cmd(g_handle, AHT30_ADDRESS, &status, 1) != 0)           /* read the status */
+    if (iic_read_cmd(*g_handle, AHT30_ADDRESS, &status, 1) != 0)           /* read the status */
     {
         printf("aht30: read status failed.\n");
-        iic_deinit(g_handle);
+        iic_deinit(*g_handle);
         return 4;
     }
 
     if ((status & 0x18) != 0x18)                                         /* check the status */
     {
-        if (a_aht30_jh_reset_reg(g_handle, 0x1B) != 0)                   /* reset the 0x1B */
+        if (a_aht30_jh_reset_reg(*g_handle, 0x1B) != 0)                   /* reset the 0x1B */
         {
             printf("aht30: reset reg failed.\n");
-            iic_deinit(g_handle);
+            iic_deinit(*g_handle);
             return 5;
         }
-        if (a_aht30_jh_reset_reg(g_handle, 0x1C) != 0)                   /* reset the 0x1C */
+        if (a_aht30_jh_reset_reg(*g_handle, 0x1C) != 0)                   /* reset the 0x1C */
         {
             printf("aht30: reset reg failed.\n");
-            iic_deinit(g_handle);
+            iic_deinit(*g_handle);
             return 5;
         }
-        if (a_aht30_jh_reset_reg(g_handle, 0x1E) != 0)                   /* reset the 0x1E */
+        if (a_aht30_jh_reset_reg(*g_handle, 0x1E) != 0)                   /* reset the 0x1E */
         {
             printf("aht30: reset reg failed.\n");
-            iic_deinit(g_handle);
+            iic_deinit(*g_handle);
             return 5;
         }
     }

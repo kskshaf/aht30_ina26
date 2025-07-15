@@ -172,7 +172,6 @@ uint8_t aht30(int argc, char **argv)
         help:
         printf("Usage:\n");
         printf("  aht30 (-h | --help)\n");
-        printf("  aht30 (-t read | --test=read) [--times=<num>]\n");
         printf("  aht30 (-e read | --example=read) [--times=<num>]\n");
         printf("\n");
         printf("Options:\n");

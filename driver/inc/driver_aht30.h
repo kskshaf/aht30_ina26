@@ -104,7 +104,7 @@ typedef struct aht30_handle_s
  *            - 5 reset reg failed
  * @note      none
  */
-uint8_t aht30_init(int g_handle);
+uint8_t aht30_init(int *g_handle);
 
 /**
  * @brief     close the chip

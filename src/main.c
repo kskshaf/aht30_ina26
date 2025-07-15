@@ -34,157 +34,12 @@
  * </table>
  */
 
-#include "driver_aht30_basic.h"
+//#include "driver_aht30_basic.h"
+#include "driver_aht30.h"
 #include <math.h>
 #include <getopt.h>
 #include <stdlib.h>
-
-/**
- * @brief     aht30 full function
- * @param[in] argc arg numbers
- * @param[in] **argv arg address
- * @return    status code
- *            - 0 success
- *            - 1 run failed
- *            - 5 param is invalid
- * @note      none
- */
-uint8_t aht30(int argc, char **argv)
-{
-    int c;
-    int longindex = 0;
-    const char short_options[] = "hipe:t:";
-    const struct option long_options[] =
-    {
-        {"help", no_argument, NULL, 'h'},
-        {"example", required_argument, NULL, 'e'},
-        {"times", required_argument, NULL, 1},
-        {NULL, 0, NULL, 0},
-    };
-    char type[33] = "unknown";
-    uint32_t times = 3;
-    
-    /* if no params */
-    if (argc == 1)
-    {
-        /* goto the help */
-        goto help;
-    }
-    
-    /* init 0 */
-    optind = 0;
-    
-    /* parse */
-    do
-    {
-        /* parse the args */
-        c = getopt_long(argc, argv, short_options, long_options, &longindex);
-        
-        /* judge the result */
-        switch (c)
-        {
-            /* help */
-            case 'h' :
-            {
-                /* set the type */
-                memset(type, 0, sizeof(char) * 33);
-                snprintf(type, 32, "h");
-                
-                break;
-            }
-            
-            /* example */
-            case 'e' :
-            {
-                /* set the type */
-                memset(type, 0, sizeof(char) * 33);
-                snprintf(type, 32, "e_%s", optarg);
-                
-                break;
-            }
-            
-            /* running times */
-            case 1 :
-            {
-                /* set the times */
-                times = atol(optarg);
-                
-                break;
-            } 
-            
-            /* the end */
-            case -1 :
-            {
-                break;
-            }
-            
-            /* others */
-            default :
-            {
-                return 5;
-            }
-        }
-    } while (c != -1);
-
-    /* run the function */
-    if (strcmp("e_read", type) == 0)
-    {
-        uint8_t res;
-        uint32_t i;
-        float temperature;
-        uint8_t humidity;
-        
-        /* basic init */
-        res = aht30_basic_init();
-        if (res != 0)
-        {
-            return 1;
-        }
-        
-        /* loop */
-        for (i = 0; i < times; i++)
-        {
-            /* read data */
-            res = aht30_basic_read((float *)&temperature, (uint8_t *)&humidity);
-            if (res != 0)
-            {
-                (void)aht30_basic_deinit();
-                
-                return 1;
-            }
-            
-            /* output */
-            printf("aht30: %d/%d.\n", (uint32_t)(i + 1), (uint32_t)times);
-            printf("aht30: temperature is %0.2fC.\n", temperature);
-            printf("aht30: humidity is %d%%.\n", humidity);
-
-            /* delay 2000ms */
-            usleep(1000*1000);
-        }
-        
-        /* deinit */
-        (void)aht30_basic_deinit();
-        
-        return 0;
-    }
-    else if (strcmp("h", type) == 0)
-    {
-        help:
-        printf("Usage:\n");
-        printf("  aht30 (-h | --help)\n");
-        printf("  aht30 (-e read | --example=read) [--times=<num>]\n");
-        printf("\n");
-        printf("Options:\n");
-        printf("  -e <read>, --example=<read>    Run the driver example.\n");
-        printf("  -h, --help                     Show the help.\n");
-
-        return 0;
-    }
-    else
-    {
-        return 5;
-    }
-}
+#include "device.h"
 
 /**
  * @brief     main function
@@ -196,25 +51,66 @@ uint8_t aht30(int argc, char **argv)
  */
 int main(int argc, char **argv)
 {
-    uint8_t res;
+    //uint8_t res;
+    uint32_t times = 50;
 
-    res = aht30(argc, argv);
-    if (res == 0)
+    float temperature_1;
+    uint8_t humidity_1;
+
+    float temperature_2;
+    uint8_t humidity_2;
+
+    /* aht30_1 init */
+    if (aht30_init(&gs_fd_1, IIC_DEVICE_PORT_1, &inited_1, IIC_DEVICE_ADDR) != 0)
     {
-        /* run success */
-    }
-    else if (res == 1)
-    {
-        printf("aht30: run failed.\n");
-    }
-    else if (res == 5)
-    {
-        printf("aht30: param is invalid.\n");
-    }
-    else
-    {
-        printf("aht30: unknown status code.\n");
+        log_error("aht30_1 init failed.");
+        return 1;
     }
 
+    /* aht30_2 init */
+    if (aht30_init(&gs_fd_2, IIC_DEVICE_PORT_2, &inited_2, IIC_DEVICE_ADDR) != 0)
+    {
+        log_error("aht30_2 init failed.");
+        return 1;
+    }
+
+    /* loop */
+    for (uint32_t i = 0; i < times; i++)
+    {
+        /* read temperature and humidity */
+        if (aht30_read_temperature_humidity(gs_fd_1, &temperature_1, &humidity_1, inited_1) != 0)
+        {
+            /* deinit aht30 and close bus */
+            (void)aht30_deinit(gs_fd_1, inited_1);
+        }
+        printf("count: %d/%d.\n", (uint32_t)(i + 1), (uint32_t)times);
+        printf("====================================\n");
+        printf("aht30_1: temperature is %0.2fC.\n", temperature_1);
+        printf("aht30_1: humidity is %d%%.\n", humidity_1);
+
+        if(i % 10 == 0)
+        {
+            if (aht30_read_temperature_humidity(gs_fd_2, &temperature_2, &humidity_2, inited_2) != 0)
+            {
+                /* deinit aht30 and close bus */
+                (void)aht30_deinit(gs_fd_2, inited_2);
+            }
+
+            printf("====================================\n");
+            printf("aht30_2: temperature is %0.2fC.\n", temperature_2);
+            printf("aht30_2: humidity is %d%%.\n\n", humidity_2);
+        }
+        else
+        {
+            printf("\n");
+        }
+
+        /* delay 1000ms */
+        usleep(1000*1000);
+    }
+
+    /* deinit */
+    (void)aht30_deinit(gs_fd_1, inited_1);
+    (void)aht30_deinit(gs_fd_2, inited_2);
     return 0;
 }

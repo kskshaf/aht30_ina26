@@ -42,10 +42,6 @@ void delay_ms(uint32_t ms)
     usleep(ms * 1000);
 }
 
-#define IIC_DEVICE_NAME "/dev/i2c-4"        /**< iic device name */
-#define IIC_DEVICE_ADDR 0x38
-uint8_t inited;
-
 /**
  * @brief chip address definition
  */
@@ -136,20 +132,20 @@ static uint8_t a_aht30_jh_reset_reg(int g_handle, uint8_t addr)
  *            - 5 reset reg failed
  * @note      none
  */
-uint8_t aht30_init(int *g_handle)
+uint8_t aht30_init(int *g_handle, char *i2c_port, uint8_t *inited, int dev_addr)
 {
     uint8_t status;
 
-    if (iic_init(IIC_DEVICE_NAME, g_handle, IIC_DEVICE_ADDR) != 0)       /* iic init */
+    if (iic_init(i2c_port, g_handle, dev_addr) != 0)       /* iic init */
     {
-        printf("aht30: iic init failed.\n");
+        log_error("iic init failed.");
         return 1;
     }
     delay_ms(200);
 
     if (iic_read_cmd(*g_handle, AHT30_ADDRESS, &status, 1) != 0)           /* read the status */
     {
-        printf("aht30: read status failed.\n");
+        log_error("read status failed.");
         iic_deinit(*g_handle);
         return 4;
     }
@@ -158,26 +154,26 @@ uint8_t aht30_init(int *g_handle)
     {
         if (a_aht30_jh_reset_reg(*g_handle, 0x1B) != 0)                   /* reset the 0x1B */
         {
-            printf("aht30: reset reg failed.\n");
+            log_error("reset reg failed.");
             iic_deinit(*g_handle);
             return 5;
         }
         if (a_aht30_jh_reset_reg(*g_handle, 0x1C) != 0)                   /* reset the 0x1C */
         {
-            printf("aht30: reset reg failed.\n");
+            log_error("reset reg failed.");
             iic_deinit(*g_handle);
             return 5;
         }
         if (a_aht30_jh_reset_reg(*g_handle, 0x1E) != 0)                   /* reset the 0x1E */
         {
-            printf("aht30: reset reg failed.\n");
+            log_error("reset reg failed.");
             iic_deinit(*g_handle);
             return 5;
         }
     }
     delay_ms(10);
-    inited = 1;                                                        /* flag finish initialization */
-    
+    *inited = 1;                                                        /* flag finish initialization */
+
     return 0;                                                          /* success return 0 */
 }
 
@@ -191,7 +187,7 @@ uint8_t aht30_init(int *g_handle)
  *            - 3 handle is not initialized
  * @note      none
  */
-uint8_t aht30_deinit(int g_handle)
+uint8_t aht30_deinit(int g_handle, uint8_t inited)
 {
     if (inited != 1)                                       /* check handle initialization */
     {
@@ -200,7 +196,7 @@ uint8_t aht30_deinit(int g_handle)
 
     if (iic_deinit(g_handle) != 0)                                 /* iic deinit */
     {
-        printf("aht30: iic deinit failed.\n");        /* iic deinit failed */
+        log_error("iic deinit failed.");        /* iic deinit failed */
         return 1;                                                  /* return error */
     }
     inited = 0;                                            /* set closed flag */
@@ -224,10 +220,11 @@ uint8_t aht30_deinit(int g_handle)
  *             - 5 crc is error
  * @note       none
  */
-uint8_t aht30_read_temperature_humidity(int g_handle, uint32_t *temperature_raw, float *temperature_s,
-                                        uint32_t *humidity_raw, uint8_t *humidity_s)
+uint8_t aht30_read_temperature_humidity(int g_handle, float *temperature_s, uint8_t *humidity_s, uint8_t inited)
 {
     uint8_t buf[7];
+    uint32_t temperature_raw;
+    uint32_t humidity_raw;
 
     if (inited != 1)                                                  /* check handle initialization */
     {
@@ -239,38 +236,39 @@ uint8_t aht30_read_temperature_humidity(int g_handle, uint32_t *temperature_raw,
     buf[2] = 0x00;                                                    /* set 0x00 */
     if (iic_write_cmd(g_handle, AHT30_ADDRESS, buf, 3) != 0)          /* write the command */
     {
-        printf("aht30: sent command failed.\n");                      /* sent command failed */
+        log_error("sent command failed.");                      /* sent command failed */
         return 1;
     }
     delay_ms(85);                                                     /* delay 85ms */
 
     if (iic_read_cmd(g_handle, AHT30_ADDRESS, buf, 7) != 0)           /* read data */
     {
-        printf("aht30: read data failed.\n");
+        log_error("read data failed.");
         return 1;
     }
     if ((buf[0] & 0x80) != 0)                                         /* check busy */
     {
-        printf("aht30: data is not ready.\n");
+        log_error("data is not ready.");
         return 4;
     }
     if (a_aht30_calc_crc(buf, 6) != buf[6])                           /* check the crc */
     {
-        printf("aht30: crc is error.\n");
+        log_error("crc is error.");
         return 5;
     }
-    
-    *humidity_raw = (((uint32_t)buf[1]) << 16) |
+
+    humidity_raw = (((uint32_t)buf[1]) << 16) |
                     (((uint32_t)buf[2]) << 8) |
                     (((uint32_t)buf[3]) << 0);                        /* set the humidity */
-    *humidity_raw = (*humidity_raw) >> 4;                             /* right shift 4 */
-    *humidity_s = (uint8_t)((float)(*humidity_raw)
+    humidity_raw = humidity_raw >> 4;                                 /* right shift 4 */
+    *humidity_s = (uint8_t)((float)humidity_raw
                             / 1048576.0f * 100.0f);                   /* convert the humidity */
-    *temperature_raw = (((uint32_t)buf[3]) << 16) |
+
+    temperature_raw = (((uint32_t)buf[3]) << 16) |
                        (((uint32_t)buf[4]) << 8) |
                        (((uint32_t)buf[5]) << 0);                     /* set the temperature */
-    *temperature_raw = (*temperature_raw) & 0xFFFFF;                  /* cut the temperature part */
-    *temperature_s = (float)(*temperature_raw) 
+    temperature_raw = temperature_raw & 0xFFFFF;                      /* cut the temperature part */
+    *temperature_s = (float)temperature_raw 
                              / 1048576.0f * 200.0f
                              - 50.0f;                                 /* right shift 4 */
     

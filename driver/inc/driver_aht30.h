@@ -42,6 +42,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include "log.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -57,18 +58,6 @@ extern "C"{
  * @addtogroup aht30_base_driver
  * @{
  */
-
-/**
- * @brief aht30 handle structure definition
- */
-typedef struct aht30_handle_s
-{
-    uint8_t (*iic_init)(void);                                                 /**< point to an iic_init function address */
-    uint8_t (*iic_deinit)(void);                                               /**< point to an iic_deinit function address */
-    uint8_t (*iic_read_cmd)(uint8_t addr, uint8_t *buf, uint16_t len);         /**< point to an iic_read_cmd function address */
-    uint8_t (*iic_write_cmd)(uint8_t addr, uint8_t *buf, uint16_t len);        /**< point to an iic_write_cmd function address */
-    uint8_t inited;                                                            /**< inited flag */
-} aht30_handle_t;
 
 /**
  * @}
@@ -104,7 +93,7 @@ typedef struct aht30_handle_s
  *            - 5 reset reg failed
  * @note      none
  */
-uint8_t aht30_init(int *g_handle);
+uint8_t aht30_init(int *g_handle, char *i2c_port, uint8_t *inited, int dev_addr);
 
 /**
  * @brief     close the chip
@@ -116,7 +105,7 @@ uint8_t aht30_init(int *g_handle);
  *            - 3 handle is not initialized
  * @note      none
  */
-uint8_t aht30_deinit(int g_handle);
+uint8_t aht30_deinit(int g_handle, uint8_t inited);
 
 /**
  * @brief      read the temperature and humidity data
@@ -134,8 +123,7 @@ uint8_t aht30_deinit(int g_handle);
  *             - 5 crc is error
  * @note       none
  */
-uint8_t aht30_read_temperature_humidity(int g_handle, uint32_t *temperature_raw, float *temperature_s,
-                                        uint32_t *humidity_raw, uint8_t *humidity_s);
+uint8_t aht30_read_temperature_humidity(int g_handle, float *temperature_s, uint8_t *humidity_s, uint8_t inited);
 
 #ifdef __cplusplus
 }

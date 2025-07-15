@@ -57,15 +57,14 @@ LIBS := -lm -lpthread
 
 # set all header directories
 INC_DIRS := -I ./driver/inc/ \
-			-I ./interface/inc/
+			-I ./src/
 
 # set the installing headers
 INSTL_INCS := $(wildcard ./driver/inc/*.h)
 
 # set the main source
 MAIN := $(wildcard ./driver/src/*.c) \
-		$(wildcard ./interface/src/*.c) \
-		$(wildcard ./src/main.c)
+		$(wildcard ./src/*.c)
 
 # set flags of the compiler
 CFLAGS := -O3 \

@@ -67,8 +67,7 @@ MAIN := $(wildcard ./driver/src/*.c) \
 		$(wildcard ./src/*.c)
 
 # set flags of the compiler
-CFLAGS := -O3 \
-		-DNDEBUG -Wall
+CFLAGS := -O3 -Wall -Wextra
 
 # set all .PHONY
 .PHONY: all

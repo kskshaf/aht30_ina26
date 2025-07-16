@@ -34,7 +34,6 @@
  * </table>
  */
 
-//#include "driver_aht30_basic.h"
 #include "driver_aht30.h"
 #include <math.h>
 #include <getopt.h>
@@ -49,16 +48,12 @@
  *             - 0 success
  * @note      none
  */
-int main(int argc, char **argv)
+int main(void)
 {
-    //uint8_t res;
     uint32_t times = 50;
 
-    float temperature_1;
-    uint8_t humidity_1;
-
-    float temperature_2;
-    uint8_t humidity_2;
+    float temperature_1 = 0, humidity_1 = 0;
+    float temperature_2 = 0, humidity_2 = 0;
 
     /* aht30_1 init */
     if (aht30_init(&gs_fd_1, IIC_DEVICE_PORT_1, &inited_1, IIC_DEVICE_ADDR) != 0)
@@ -85,8 +80,8 @@ int main(int argc, char **argv)
         }
         printf("count: %d/%d.\n", (uint32_t)(i + 1), (uint32_t)times);
         printf("====================================\n");
-        printf("aht30_1: temperature is %0.2fC.\n", temperature_1);
-        printf("aht30_1: humidity is %d%%.\n", humidity_1);
+        printf("aht30_1: temperature is %.2fC.\n", temperature_1);
+        printf("aht30_1: humidity is %.1f%%.\n", humidity_1);
 
         if(i % 10 == 0)
         {
@@ -98,7 +93,7 @@ int main(int argc, char **argv)
 
             printf("====================================\n");
             printf("aht30_2: temperature is %0.2fC.\n", temperature_2);
-            printf("aht30_2: humidity is %d%%.\n\n", humidity_2);
+            printf("aht30_2: humidity is %.1f%%.\n\n", humidity_2);
         }
         else
         {

@@ -123,7 +123,7 @@ uint8_t aht30_deinit(int g_handle, uint8_t inited);
  *             - 5 crc is error
  * @note       none
  */
-uint8_t aht30_read_temperature_humidity(int g_handle, float *temperature_s, uint8_t *humidity_s, uint8_t inited);
+uint8_t aht30_read_temperature_humidity(int g_handle, float *temperature_s, float *humidity_s, uint8_t inited);
 
 #ifdef __cplusplus
 }

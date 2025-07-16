@@ -220,7 +220,7 @@ uint8_t aht30_deinit(int g_handle, uint8_t inited)
  *             - 5 crc is error
  * @note       none
  */
-uint8_t aht30_read_temperature_humidity(int g_handle, float *temperature_s, uint8_t *humidity_s, uint8_t inited)
+uint8_t aht30_read_temperature_humidity(int g_handle, float *temperature_s, float *humidity_s, uint8_t inited)
 {
     uint8_t buf[7];
     uint32_t temperature_raw;
@@ -261,8 +261,8 @@ uint8_t aht30_read_temperature_humidity(int g_handle, float *temperature_s, uint
                     (((uint32_t)buf[2]) << 8) |
                     (((uint32_t)buf[3]) << 0);                        /* set the humidity */
     humidity_raw = humidity_raw >> 4;                                 /* right shift 4 */
-    *humidity_s = (uint8_t)((float)humidity_raw
-                            / 1048576.0f * 100.0f);                   /* convert the humidity */
+    *humidity_s = (float)humidity_raw
+                            / 1048576.0f * 100.0f;                   /* convert the humidity */
 
     temperature_raw = (((uint32_t)buf[3]) << 16) |
                        (((uint32_t)buf[4]) << 8) |

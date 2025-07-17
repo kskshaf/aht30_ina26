@@ -1,66 +1,21 @@
-/**
- * Copyright (c) 2015 - present LibDriver All rights reserved
- * 
- * The MIT License (MIT)
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE. 
- *
- * @file      main.c
- * @brief     main source file
- * @version   1.0.0
- * @author    Shifeng Li
- * @date      2023-11-30
- *
- * <h3>history</h3>
- * <table>
- * <tr><th>Date        <th>Version  <th>Author      <th>Description
- * <tr><td>2023/11/30  <td>1.0      <td>Shifeng Li  <td>first upload
- * </table>
- */
-
 #include "driver_aht30.h"
-#include <math.h>
-#include <getopt.h>
-#include <stdlib.h>
 #include "device.h"
+#include "exit.h"
 
-/**
- * @brief     main function
- * @param[in] argc arg numbers
- * @param[in] **argv arg address
- * @return    status code
- *             - 0 success
- * @note      none
- */
-int main(void)
-{
-    uint32_t times = 50;
+#define Temp_HIGH 45
 
-    float temperature_1 = 0, humidity_1 = 0;
-    float temperature_2 = 0, humidity_2 = 0;
 
-    /* aht30_1 init */
-    if (aht30_init(&gs_fd_1, IIC_DEVICE_PORT_1, &inited_1, IIC_DEVICE_ADDR) != 0)
-    {
-        log_error("aht30_1 init failed.");
-        return 1;
-    }
+/* 另一传感器的监测线程 */
+pthread_t    aht30_2_thread;
+volatile int aht30_2_thread_running = 0;
+volatile float temperature_2 = 0, humidity_2 = 0;
+
+void* aht30_2_handler(void* arg) {
+    pthread_detach(aht30_2_thread);   // 线程分离
+    log_info(" ");
+
+    static int gs_fd_2; // iic handle
+    static uint8_t inited_2;
 
     /* aht30_2 init */
     if (aht30_init(&gs_fd_2, IIC_DEVICE_PORT_2, &inited_2, IIC_DEVICE_ADDR) != 0)
@@ -69,8 +24,67 @@ int main(void)
         return 1;
     }
 
+    while(keep_running && !check_keep_file()) {
+
+        if (aht30_read_temperature_humidity(gs_fd_2, &temperature_2, &humidity_2, inited_2) != 0)
+        {
+            /* deinit aht30 and close bus */
+            (void)aht30_deinit(gs_fd_2, inited_2);
+        }
+
+        printf("====================================\n");
+        printf("aht30_2: 温度 %.2fC, 湿度 %.1f%%\n", temperature_2, humidity_2);
+
+        usleep(5000*1000);
+    }
+
+    (void)aht30_deinit(gs_fd_2, inited_2);
+    log_info("退出 aht30_2 线程");
+    aht30_2_thread_running = 0;
+
+    pthread_exit(NULL);
+}
+
+
+int main(void)
+{
+    // 设置 locale
+    setlocale(LC_ALL, "zh_CN.UTF-8");
+    // 设置信号处理
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+
+    static int gs_fd_1; // iic handle
+    static uint8_t inited_1;
+    int thread_res;
+
+    float temperature_1 = 0, humidity_1 = 0;
+
+    /* aht30_1 init */
+    if (aht30_init(&gs_fd_1, IIC_DEVICE_PORT_1, &inited_1, IIC_DEVICE_ADDR) != 0)
+    {
+        log_error("aht30_1 init failed.");
+        return 1;
+    }
+
+    // 创建温度异常线程
+    if(!aht30_2_thread_running)
+    {
+        thread_res = pthread_create(&aht30_2_thread, NULL, aht30_2_handler, NULL);
+        if(thread_res != 0)
+        {
+            aht30_2_thread_running = 0;
+            log_error("创建 aht30_2 线程失败: %d", thread_res);
+        }
+        else
+        {
+            aht30_2_thread_running = 1;
+            log_info("创建 aht30_2 线程成功");
+        }
+    }
+
     /* loop */
-    for (uint32_t i = 0; i < times; i++)
+    while(keep_running && !check_keep_file())
     {
         /* read temperature and humidity */
         if (aht30_read_temperature_humidity(gs_fd_1, &temperature_1, &humidity_1, inited_1) != 0)
@@ -78,27 +92,8 @@ int main(void)
             /* deinit aht30 and close bus */
             (void)aht30_deinit(gs_fd_1, inited_1);
         }
-        printf("count: %d/%d.\n", (uint32_t)(i + 1), (uint32_t)times);
         printf("====================================\n");
-        printf("aht30_1: temperature is %.2fC.\n", temperature_1);
-        printf("aht30_1: humidity is %.1f%%.\n", humidity_1);
-
-        if(i % 10 == 0)
-        {
-            if (aht30_read_temperature_humidity(gs_fd_2, &temperature_2, &humidity_2, inited_2) != 0)
-            {
-                /* deinit aht30 and close bus */
-                (void)aht30_deinit(gs_fd_2, inited_2);
-            }
-
-            printf("====================================\n");
-            printf("aht30_2: temperature is %0.2fC.\n", temperature_2);
-            printf("aht30_2: humidity is %.1f%%.\n\n", humidity_2);
-        }
-        else
-        {
-            printf("\n");
-        }
+        printf("aht30_1: 温度 %.2fC, 湿度 %.1f%%\n", temperature_1, humidity_1);
 
         /* delay 1000ms */
         usleep(1000*1000);
@@ -106,6 +101,5 @@ int main(void)
 
     /* deinit */
     (void)aht30_deinit(gs_fd_1, inited_1);
-    (void)aht30_deinit(gs_fd_2, inited_2);
     return 0;
 }

@@ -38,95 +38,21 @@
 #define DRIVER_AHT30_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdarg.h>
+#include <signal.h>
+#include <time.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <locale.h>
+#include <math.h>
+#include <getopt.h>
 #include "log.h"
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-
-/**
- * @defgroup aht30_driver aht30 driver function
- * @brief    aht30 driver modules
- * @{
- */
-
-/**
- * @addtogroup aht30_base_driver
- * @{
- */
-
-/**
- * @}
- */
-
-/**
- * @defgroup aht30_link_driver aht30 link driver function
- * @brief    aht30 link driver modules
- * @ingroup  aht30_driver
- * @{
- */
-
-/**
- * @}
- */
-
-/**
- * @defgroup aht30_base_driver aht30 base driver function
- * @brief    aht30 base driver modules
- * @ingroup  aht30_driver
- * @{
- */
-
-/**
- * @brief     initialize the chip
- * @param[in] *handle pointer to an aht30 handle structure
- * @return    status code
- *            - 0 success
- *            - 1 iic failed
- *            - 2 handle is NULL
- *            - 3 linked functions is NULL
- *            - 4 read status failed
- *            - 5 reset reg failed
- * @note      none
- */
 uint8_t aht30_init(int *g_handle, char *i2c_port, uint8_t *inited, int dev_addr);
-
-/**
- * @brief     close the chip
- * @param[in] *handle pointer to an aht30 handle structure
- * @return    status code
- *            - 0 success
- *            - 1 deinit failed
- *            - 2 handle is NULL
- *            - 3 handle is not initialized
- * @note      none
- */
 uint8_t aht30_deinit(int g_handle, uint8_t inited);
-
-/**
- * @brief      read the temperature and humidity data
- * @param[in]  *handle pointer to an aht30 handle structure
- * @param[out] *temperature_raw pointer to a raw temperature buffer
- * @param[out] *temperature_s pointer to a converted temperature buffer
- * @param[out] *humidity_raw pointer to a raw humidity buffer
- * @param[out] *humidity_s pointer to a converted humidity buffer
- * @return     status code
- *             - 0 success
- *             - 1 read temperature humidity failed
- *             - 2 handle is NULL
- *             - 3 handle is not initialized
- *             - 4 data is not ready
- *             - 5 crc is error
- * @note       none
- */
 uint8_t aht30_read_temperature_humidity(int g_handle, float *temperature_s, float *humidity_s, uint8_t inited);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

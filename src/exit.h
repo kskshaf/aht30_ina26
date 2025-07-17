@@ -1,7 +1,8 @@
 #ifndef EXIT_H
 #define EXIT_H
 
-#include "im1281b_home_power.h"
+#include "driver_aht30.h"
+#define KEEP_FILE "/tmp/aht30_keep"
 
 extern volatile sig_atomic_t keep_running;
 

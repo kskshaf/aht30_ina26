@@ -219,6 +219,16 @@ int main(void)
         }
         read_retry = 0;
 
+        // 写入文件
+        FILE *fp = fopen(DATA_FILE_1, "w");
+        if (fp != NULL) {
+            fprintf(fp, "T=%.2f\nH=%.1f\n", temperature_main, humidity_main);
+            fclose(fp);
+        } else {
+            log_error("打开 %s 失败", DATA_FILE_1);
+            break;
+        }
+
         // 过热或温度恢复正常时发送邮件
         if(temperature_main > Temp_HIGH)
         {
@@ -241,18 +251,6 @@ int main(void)
             }
             overH_task_lock = 0;
             tempN_task_lock = 1;
-        }
-
-        //printf("aht30_1: 温度 %.2f°C, 湿度 %.1f%%\n", temperature_main, humidity_main);
-
-        // 写入文件
-        FILE *fp = fopen(DATA_FILE_1, "w");
-        if (fp != NULL) {
-            fprintf(fp, "T=%.2f\nH=%.1f\n", temperature_main, humidity_main);
-            fclose(fp);
-        } else {
-            log_error("打开 %s 失败", DATA_FILE_1);
-            break;
         }
 
         /* delay 1000ms */

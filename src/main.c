@@ -1,18 +1,12 @@
 #include "driver_aht30.h"
-#include "device.h"
+#include "config.h"
 #include "exit.h"
-
-#define Temp_HIGH    45
-#define DATA_FILE_1  "/tmp/aht30_data_1"
-#define DATA_FILE_2  "/tmp/aht30_data_2"
-#define LOG_FILE     "/var/log/aht30/aht30.log"
 
 /* aht30_2 监测线程 */
 pthread_t    aht30_2_thread;
 volatile int aht30_2_thread_running = 0;
 
 void* aht30_2_handler(void* arg) {
-    //pthread_detach(aht30_2_thread);   // 线程分离
     log_info("启动 aht30_2 线程");
 
     static int gs_fd_2; // iic handle
@@ -26,8 +20,16 @@ void* aht30_2_handler(void* arg) {
     /* aht30_2 init */
     if (aht30_init(&gs_fd_2, IIC_DEVICE_PORT_2, &inited_2, IIC_DEVICE_ADDR) != 0)
     {
+        pthread_detach(aht30_2_thread);   // 线程分离
+        aht30_2_thread_running = 0;
+
         log_error("aht30_2: 初始化失败");
-        aht30_2_thread_running = -1;
+
+        // 发送邮件
+        thread_res = system("/root/send_mail.sh 12");
+        if(thread_res != 0) log_error("邮件发送异常!");
+
+        log_error("退出 aht30_2 线程");
         pthread_exit(NULL);
     }
 
@@ -44,9 +46,11 @@ void* aht30_2_handler(void* arg) {
                 log_error("打开 %s 失败", DATA_FILE_2);
             }
 
+            // 重试超过5次退出
             if(read_retry_2 >= 5)
             {
-                log_error("aht30_2: 重试超过5次, 退出循环");
+                pthread_detach(aht30_2_thread);   // 线程分离
+                aht30_2_thread_running = 0;
 
                 // 发送邮件
                 thread_res = system("/root/send_mail.sh 12");
@@ -54,7 +58,9 @@ void* aht30_2_handler(void* arg) {
 
                 // 清理
                 (void)aht30_deinit(gs_fd_2, inited_2);
-                break;
+
+                log_error("aht30_2: 重试超过5次, 退出线程");
+                pthread_exit(NULL);
             }
 
             // 尝试重新初始化
@@ -65,10 +71,9 @@ void* aht30_2_handler(void* arg) {
 
             log_warn("接收超时, 正在重试: %d", read_retry_2+1);
             read_retry_2++;
-            usleep(1000*1000);
+            usleep(2000*1000);
         }
         read_retry_2 = 0;
-        //printf("aht30_2: 温度 %.2f°C, 湿度 %.1f%%\n\n", temperature_2, humidity_2);
 
         // 写入文件
         FILE *fp = fopen(DATA_FILE_2, "w");
@@ -83,17 +88,9 @@ void* aht30_2_handler(void* arg) {
         usleep(2000*1000);
     }
 
-    // 退出清空数据
-    FILE *fp = fopen(DATA_FILE_2, "w");
-    if (fp != NULL) {
-        fprintf(fp, "NONE");
-        fclose(fp);
-    } else {
-        log_error("打开 %s 失败", DATA_FILE_2);
-    }
-
     (void)aht30_deinit(gs_fd_2, inited_2);
     log_info("退出 aht30_2 线程");
+
     pthread_exit(NULL);
 }
 
@@ -166,7 +163,7 @@ int main(void)
         return -1;
     }
 
-    log_info("启动主进程");
+    log_info("=========启动主进程=========");
 
     /* aht30_1 init */
     if (aht30_init(&gs_fd_1, IIC_DEVICE_PORT_1, &inited_1, IIC_DEVICE_ADDR) != 0)
@@ -196,7 +193,7 @@ int main(void)
             // 重试大于5次退出
             if(read_retry >= 5)
             {
-                log_error("重试超过5次, 退出循环");
+                log_error("重试超过5次, 退出进程");
 
                 // 发送邮件
                 thread_res = system("/root/send_mail.sh 12");
@@ -205,6 +202,8 @@ int main(void)
                 // 清理退出
                 (void)aht30_deinit(gs_fd_1, inited_1);
                 (void)aht30_2_thread_handle(1);
+                cleanup_files();
+
                 return -1;
             }
 
@@ -243,14 +242,14 @@ int main(void)
         }
         else
         {
-            if(!tempN_task_lock)
+            if(!tempN_task_lock && (temperature_main < Temp_BACK))
             {
                 log_info("温度已降低到 %.2f°C", temperature_main);
                 thread_res = system("/root/send_mail.sh 31");
                 if(thread_res != 0) log_error("邮件发送异常!");
+                tempN_task_lock = 1;
             }
             overH_task_lock = 0;
-            tempN_task_lock = 1;
         }
 
         /* delay 1000ms */
@@ -260,18 +259,10 @@ int main(void)
     /* deinit */
     (void)aht30_deinit(gs_fd_1, inited_1);
 
-    // 退出清空数据
-    FILE *fp = fopen(DATA_FILE_1, "w");
-    if (fp != NULL) {
-        fprintf(fp, "NONE");
-        fclose(fp);
-    } else {
-        log_error("打开 %s 失败", DATA_FILE_1);
-    }
-
     // 回收 aht30_2 线程
     if(aht30_2_thread_handle(1) != 0) return -1;
 
-    log_info("退出主进程");
+    log_info("=========退出主进程=========");
+    cleanup_files();
     return 0;
 }

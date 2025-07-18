@@ -163,7 +163,7 @@ int main(void)
         return -1;
     }
 
-    log_info("=========启动主进程=========");
+    log_info("==============启动主进程==============");
 
     /* aht30_1 init */
     if (aht30_init(&gs_fd_1, IIC_DEVICE_PORT_1, &inited_1, IIC_DEVICE_ADDR) != 0)
@@ -262,7 +262,7 @@ int main(void)
     // 回收 aht30_2 线程
     if(aht30_2_thread_handle(1) != 0) return -1;
 
-    log_info("=========退出主进程=========");
     cleanup_files();
+    log_info("==============退出主进程==============");
     return 0;
 }

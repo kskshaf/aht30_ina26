@@ -37,18 +37,7 @@
 #ifndef DRIVER_AHT30_H
 #define DRIVER_AHT30_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdarg.h>
-#include <signal.h>
-#include <time.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <locale.h>
-#include <math.h>
-#include <getopt.h>
+#include "includes.h"
 #include "log.h"
 
 uint8_t aht30_init(int *g_handle, char *i2c_port, uint8_t *inited, int dev_addr);

@@ -26,13 +26,13 @@
 VERSION := 1.0.0
 
 # set the application name
-APP_NAME := aht30
+APP_NAME := aht30_ina226
 
 # set the shared libraries name
-SHARED_LIB_NAME := libaht30.so
+SHARED_LIB_NAME := libaht30_ina226.so
 
 # set the static libraries name
-STATIC_LIB_NAME := libaht30.a
+STATIC_LIB_NAME := libaht30_ina226.a
 
 # set the install directories
 INSTL_DIRS := /usr/local

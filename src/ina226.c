@@ -78,7 +78,7 @@ void* ina226_handler(void* arg) {
         read_retry = 0;
 
         // 更新数值
-        ina226_voltage = (volatile float)mV;
+        ina226_voltage = (volatile float)mV / 1000.0f;
 
         // 欠压、过压、缺电处理
         if (mV < Voltage_LOW && mV > Voltage_OFF) {

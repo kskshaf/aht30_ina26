@@ -127,7 +127,7 @@ void* ina226_handler(void* arg) {
             nm_count++;
             if(nm_count > 2) {
                 if(!norM_task_lock) {
-                    log_info("当前电池电压已恢复正常: %.3fV!!!", mV / 1000.0f);
+                    log_info("当前电池电压正常: %.3fV!!!", mV / 1000.0f);
                     send_mail(23);
 
                     lowV_task_lock  = 0;

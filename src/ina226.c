@@ -16,7 +16,7 @@ void* ina226_handler(void* arg) {
     int lowV_task_lock  = 0;   // 欠压锁定
     int highV_task_lock = 0;   // 过压锁定
     int offV_task_lock  = 0;   // 缺电锁定
-    int norM_task_lock  = 0;   // 常态锁定
+    int norM_task_lock  = 1;   // 常态锁定
 
     int vl_count = 0;          // 欠压计数
     int vh_count = 0;          // 过压计数
@@ -86,6 +86,13 @@ void* ina226_handler(void* arg) {
             if(vl_count > 2) {
                 if(!lowV_task_lock) {
                     log_warn("警告：当前电池电压为 %.3fV!!!", mV / 1000.0f);
+
+                    if(system("shutdown 10") != 0) {
+                        log_error("系统异常?");
+                    } else {
+                        log_info("设置为10分钟后关机");
+                    }
+
                     send_mail(20);
 
                     lowV_task_lock  = 1;
@@ -127,7 +134,16 @@ void* ina226_handler(void* arg) {
             nm_count++;
             if(nm_count > 2) {
                 if(!norM_task_lock) {
-                    log_info("当前电池电压正常: %.3fV!!!", mV / 1000.0f);
+                    log_info("当前电池电压已恢复正常: %.3fV!!!", mV / 1000.0f);
+
+                    if(lowV_task_lock == 1) {
+                        if(system("shutdown -c") != 0) {
+                            log_error("系统异常?");
+                        } else {
+                            log_info("已取消关机");
+                        }
+                    }
+
                     send_mail(23);
 
                     lowV_task_lock  = 0;
